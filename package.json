@@ -1,41 +1,27 @@
 {
-  "name": "3.-business-context-engine",
+  "name": "business-context-engine",
   "version": "1.0.0",
-  "description": "",
-  "main": "next.config.js",
-  "directories": {
-    "lib": "lib"
-  },
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ca-cube/Business-Context-Engine.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/ca-cube/Business-Context-Engine/issues"
-  },
-  "homepage": "https://github.com/ca-cube/Business-Context-Engine#readme",
   "dependencies": {
-    "framer-motion": "^12.34.3",
-    "lucide-react": "^0.575.0",
-    "next": "^16.1.6",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "@ai-sdk/google": "latest",
+    "ai": "latest",
+    "framer-motion": "latest",
+    "lucide-react": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zod": "latest"
   },
   "devDependencies": {
-    "@types/node": "^25.3.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3"
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
   }
 }

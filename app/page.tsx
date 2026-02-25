@@ -49,18 +49,65 @@ export default function BCEDashboard() {
         setSimResult(engine.runSimulation(signals));
     }, []);
 
-    const handleDecompose = () => {
-        const newTasks = engine.decomposeStrategy();
-        setTasks(prev => [...prev, ...newTasks]);
-        setSimResult(engine.runSimulation(signals));
+    const handleDecompose = async () => {
+        try {
+            setIsSimulating(true);
+            const goal = initialGoals[Math.floor(Math.random() * initialGoals.length)];
+            const res = await fetch('/api/engine/decompose', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    goal,
+                    employees: initialEmployees,
+                    marketContext: signals.map(s => s.description).join(', ')
+                }),
+            });
+            const data = await res.json();
+            if (data.tasks) {
+                setTasks(prev => [...prev, ...data.tasks]);
+                // Trigger a re-simulation after new tasks are added
+                const simRes = await fetch('/api/engine/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tasks: [...tasks, ...data.tasks], signals }),
+                });
+                const simData = await simRes.json();
+                if (simData.macroScore) {
+                    setSimResult(prev => ({
+                        ...engine.runSimulation(signals),
+                        alignmentScore: simData.macroScore,
+                    }));
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsSimulating(false);
+        }
     };
 
-    const runFullSimulation = () => {
+    const runFullSimulation = async () => {
         setIsSimulating(true);
-        setTimeout(() => {
-            setSimResult(engine.runSimulation(signals));
+        try {
+            const simRes = await fetch('/api/engine/simulate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tasks, signals }),
+            });
+            const simData = await simRes.json();
+
+            // Merge AI impact predictions with local engine metrics
+            const localMetrics = engine.runSimulation(signals);
+            setSimResult({
+                ...localMetrics,
+                alignmentScore: simData.macroScore || localMetrics.alignmentScore,
+                recommendations: simData.adjustedTasks?.map((t: any) => t.re_prioritizationReason) || localMetrics.recommendations
+            });
+        } catch (err) {
+            console.error(err);
+        } finally {
             setIsSimulating(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -86,20 +133,20 @@ export default function BCEDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                 {/* Left Column: Strategy & Workforce */}
-                <div className="lg:col-span-1 space-y-8">
+                <div className="lg:col-span-1 space-y-8 flex direction-column gap-6">
                     <section className="glass-card">
                         <h2 className="flex items-center gap-3 mb-6 text-xl">
                             <Target className="text-cyan-400" />
                             Strategic Goals (OKRs)
                         </h2>
-                        <div className="space-y-4">
+                        <div className="flex direction-column gap-4">
                             {initialGoals.map(goal => (
-                                <div key={goal.id} className="p-4 bg-black/30 rounded-xl border border-white/5">
-                                    <div className="flex justify-between mb-2">
+                                <div key={goal.id} className="p-4 bg-black/30 rounded-xl border border-white/5 flex direction-column">
+                                    <div className="flex justify-between items-center mb-2">
                                         <span className="font-semibold">{goal.title}</span>
                                         <span className="text-xs text-dim">PRIORITY {goal.priority * 100}%</span>
                                     </div>
-                                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${goal.impactScore}%` }}
@@ -116,15 +163,15 @@ export default function BCEDashboard() {
                             <Users className="text-purple-400" />
                             Workforce Graph
                         </h2>
-                        <div className="space-y-4">
+                        <div className="flex direction-column gap-4">
                             {initialEmployees.map(emp => (
-                                <div key={emp.id} className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-xl transition-colors">
+                                <div key={emp.id} className="flex items-center gap-4 p-3 bg-white/5 rounded-xl border border-white/5">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center font-bold">
                                         {emp.name[0]}
                                     </div>
-                                    <div>
+                                    <div className="flex-1">
                                         <div className="font-medium">{emp.name}</div>
-                                        <div className="text-xs text-dim">{emp.role}</div>
+                                        <div className="text-xs text-dim uppercase tracking-wider">{emp.role}</div>
                                     </div>
                                 </div>
                             ))}
