@@ -6,7 +6,15 @@ export async function POST(req: Request) {
         const { tasks, signals } = await req.json();
 
         if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-            return NextResponse.json({ error: 'API Key not configured' }, { status: 500 });
+            console.warn('AI API Key not configured. Using mock simulation.');
+            return NextResponse.json({
+                adjustedTasks: tasks.map((t: any) => ({
+                    taskId: t.id,
+                    newImpactProbability: Math.min(1, t.impactProbability * 0.9),
+                    re_prioritizationReason: "Macro-economic signal suggests resource optimization (Mock)."
+                })),
+                macroScore: 72
+            });
         }
 
         const impact = await predictCausalImpact(tasks, signals);
