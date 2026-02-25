@@ -6,66 +6,312 @@ import {
     Zap,
     Target,
     Users,
-    LineChart,
     Activity,
     AlertTriangle,
     CheckCircle2,
     Play,
-    RefreshCcw,
-    ArrowRight
+    ArrowRight,
+    Plus,
+    Trash2,
+    Briefcase,
+    Globe,
+    ChevronRight,
+    Sparkles
 } from 'lucide-react';
 import { BusinessContextEngine } from '@/lib/engine/BusinessContextEngine';
 import { Goal, Employee, MarketSignal, Task, SimulationResult } from '@/lib/engine/types';
 
-// Mock Data
-const initialGoals: Goal[] = [
-    { id: 'g1', title: 'Revenue Expansion', description: 'Grow ARR by 35% in Q3', priority: 0.9, impactScore: 85, status: 'active' },
-    { id: 'g2', title: 'Churn Reduction', description: 'Reduce logo churn below 5%', priority: 0.85, impactScore: 78, status: 'active' },
-    { id: 'g3', title: 'Product Velocity', description: 'Release 3 major features', priority: 0.7, impactScore: 65, status: 'active' },
-];
+type ViewState = 'landing' | 'onboarding' | 'dashboard';
 
-const initialEmployees: Employee[] = [
-    { id: 'e1', name: 'Alex Chen', role: 'Staff Engineer', skills: ['React', 'Node', 'System Design'], capacity: 1, currentLoad: 0.8 },
-    { id: 'e2', name: 'Sarah Miller', role: 'Product Lead', skills: ['Strategy', 'Communication'], capacity: 1, currentLoad: 0.6 },
-    { id: 'e3', name: 'Jordan Tay', role: 'Growth Lead', skills: ['Data', 'Marketing'], capacity: 1, currentLoad: 0.5 },
-];
+export default function AppContainer() {
+    const [view, setView] = useState<ViewState>('landing');
 
-const mockSignals: MarketSignal[] = [
-    { id: 's1', type: 'competitor', description: 'Competitor X launched AI feature', severity: 0.8, timestamp: new Date().toISOString() },
-    { id: 's2', type: 'customer', description: 'Enterprise churn signals detected in FinTech', severity: 0.6, timestamp: new Date().toISOString() },
-];
+    // User Data State
+    const [goals, setGoals] = useState<Goal[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [marketSignals, setMarketSignals] = useState<MarketSignal[]>([]);
 
-export default function BCEDashboard() {
-    const [engine] = useState(new BusinessContextEngine(initialGoals, initialEmployees));
+    // Engine State
+    const [engine, setEngine] = useState<BusinessContextEngine | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [signals, setSignals] = useState<MarketSignal[]>(mockSignals);
     const [simResult, setSimResult] = useState<SimulationResult | null>(null);
     const [isSimulating, setIsSimulating] = useState(false);
 
-    useEffect(() => {
-        // Initial decomposition
-        const initialTasks = engine.decomposeStrategy();
-        setTasks(initialTasks);
-        setSimResult(engine.runSimulation(signals));
-    }, []);
+    const startOnboarding = () => setView('onboarding');
 
+    const finalizeOnboarding = (finalGoals: Goal[], finalEmployees: Employee[], finalSignals: MarketSignal[]) => {
+        setGoals(finalGoals);
+        setEmployees(finalEmployees);
+        setMarketSignals(finalSignals);
+
+        const newEngine = new BusinessContextEngine(finalGoals, finalEmployees);
+        setEngine(newEngine);
+
+        // Initial decomposition
+        const initialTasks = newEngine.decomposeStrategy();
+        setTasks(initialTasks);
+        setSimResult(newEngine.runSimulation(finalSignals));
+
+        setView('dashboard');
+    };
+
+    return (
+        <div className="min-h-screen bg-[#050507]">
+            <AnimatePresence mode="wait">
+                {view === 'landing' && (
+                    <LandingView key="landing" onStart={startOnboarding} />
+                )}
+                {view === 'onboarding' && (
+                    <OnboardingView key="onboarding" onComplete={finalizeOnboarding} />
+                )}
+                {view === 'dashboard' && engine && (
+                    <DashboardView
+                        key="dashboard"
+                        engine={engine}
+                        goals={goals}
+                        employees={employees}
+                        signals={marketSignals}
+                        tasks={tasks}
+                        setTasks={setTasks}
+                        simResult={simResult}
+                        setSimResult={setSimResult}
+                        isSimulating={isSimulating}
+                        setIsSimulating={setIsSimulating}
+                    />
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// --- SUB-COMPONENTS ---
+
+function LandingView({ onStart }: { onStart: () => void }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="flex flex-1 items-center justify-center min-h-screen p-8"
+        >
+            <div className="max-w-4xl text-center">
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8">
+                        <Sparkles size={16} className="text-cyan-400" />
+                        <span className="text-sm font-medium text-cyan-400 tracking-wider uppercase">Context Orchestration Layer</span>
+                    </div>
+                </motion.div>
+
+                <motion.h1
+                    className="text-7xl font-black mb-6 leading-tight"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                >
+                    Turn Strategy Into <br />
+                    <span className="gradient-text">Executable Intelligence</span>
+                </motion.h1>
+
+                <motion.p
+                    className="text-xl text-dim mb-12 max-w-2xl mx-auto leading-relaxed"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                >
+                    Stop the strategic drift. Our AI agentic framework continuously translates
+                    OKRs and market signals into prioritized, alignment-verified tasks.
+                </motion.p>
+
+                <motion.button
+                    onClick={onStart}
+                    className="btn-primary text-lg px-10 py-5 group"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    Get Started
+                    <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+            </div>
+        </motion.div>
+    );
+}
+
+function OnboardingView({ onComplete }: { onComplete: (g: Goal[], e: Employee[], s: MarketSignal[]) => void }) {
+    const [goals, setGoals] = useState<Goal[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [signals, setSignals] = useState<MarketSignal[]>([]);
+
+    // Temp states for inputs
+    const [gTitle, setGTitle] = useState('');
+    const [gDesc, setGDesc] = useState('');
+    const [eName, setEName] = useState('');
+    const [eRole, setERole] = useState('');
+    const [sDesc, setSDesc] = useState('');
+
+    const addGoal = () => {
+        if (!gTitle || !gDesc) return;
+        const newGoal: Goal = {
+            id: `g-${Date.now()}`,
+            title: gTitle,
+            description: gDesc,
+            priority: 0.8,
+            impactScore: 50,
+            status: 'active'
+        };
+        setGoals([...goals, newGoal]);
+        setGTitle(''); setGDesc('');
+    };
+
+    const addEmployee = () => {
+        if (!eName || !eRole) return;
+        const newEmp: Employee = {
+            id: `e-${Date.now()}`,
+            name: eName,
+            role: eRole,
+            skills: ['Generalist'],
+            capacity: 1,
+            currentLoad: 0
+        };
+        setEmployees([...employees, newEmp]);
+        setEName(''); setERole('');
+    };
+
+    const addSignal = () => {
+        if (!sDesc) return;
+        const newSignal: MarketSignal = {
+            id: `s-${Date.now()}`,
+            type: 'macro',
+            description: sDesc,
+            severity: 0.5,
+            timestamp: new Date().toISOString()
+        };
+        setSignals([...signals, newSignal]);
+        setSDesc('');
+    };
+
+    const isReady = goals.length > 0 && employees.length > 0;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="max-w-4xl mx-auto p-12 py-20"
+        >
+            <h2 className="text-4xl font-black mb-12 flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20">
+                    <Zap className="text-cyan-400" />
+                </div>
+                Configure Your Engine
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                {/* Goals Form */}
+                <div className="space-y-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Target size={20} className="text-cyan-400" />
+                        Strategic Goals (OKRs)
+                    </h3>
+                    <div className="glass-card p-6 space-y-4">
+                        <input
+                            value={gTitle} onChange={e => setGTitle(e.target.value)}
+                            placeholder="Goal Title (e.g. Revenue Expansion)"
+                            className="w-full bg-white/5 border border-white/10 p-3 rounded-lg focus:border-cyan-400 outline-none transition-colors"
+                        />
+                        <textarea
+                            value={gDesc} onChange={e => setGDesc(e.target.value)}
+                            placeholder="Description / Key Result"
+                            className="w-full bg-white/5 border border-white/10 p-3 rounded-lg focus:border-cyan-400 outline-none transition-colors min-h-[100px]"
+                        />
+                        <button onClick={addGoal} className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                            <Plus size={18} /> Add Goal
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        {goals.map(g => (
+                            <div key={g.id} className="p-3 bg-white/5 border border-white/5 rounded-lg flex justify-between items-center">
+                                <span className="font-medium">{g.title}</span>
+                                <Trash2 size={16} className="text-dim hover:text-red-400 cursor-pointer" onClick={() => setGoals(goals.filter(x => x.id !== g.id))} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Workforce Form */}
+                <div className="space-y-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Users size={20} className="text-purple-400" />
+                        Workforce Graph
+                    </h3>
+                    <div className="glass-card p-6 space-y-4">
+                        <input
+                            value={eName} onChange={e => setEName(e.target.value)}
+                            placeholder="Employee Name"
+                            className="w-full bg-white/5 border border-white/10 p-3 rounded-lg focus:border-cyan-400 outline-none transition-colors"
+                        />
+                        <input
+                            value={eRole} onChange={e => setERole(e.target.value)}
+                            placeholder="Role (e.g. Lead Engineer)"
+                            className="w-full bg-white/5 border border-white/10 p-3 rounded-lg focus:border-cyan-400 outline-none transition-colors"
+                        />
+                        <button onClick={addEmployee} className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center gap-2 transition-colors">
+                            <Plus size={18} /> Add Member
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        {employees.map(e => (
+                            <div key={e.id} className="p-3 bg-white/5 border border-white/5 rounded-lg flex justify-between items-center">
+                                <div>
+                                    <span className="font-medium">{e.name}</span>
+                                    <span className="text-xs text-dim block uppercase">{e.role}</span>
+                                </div>
+                                <Trash2 size={16} className="text-dim hover:text-red-400 cursor-pointer" onClick={() => setEmployees(employees.filter(x => x.id !== e.id))} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-12 pt-12 border-t border-white/5 flex justify-end">
+                <button
+                    disabled={!isReady}
+                    onClick={() => onComplete(goals, employees, signals)}
+                    className={`btn-primary px-12 py-4 ${!isReady ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                >
+                    Finalize & Generate Intelligence
+                    <ArrowRight className="ml-2" />
+                </button>
+            </div>
+        </motion.div>
+    );
+}
+
+function DashboardView({
+    engine, goals, employees, signals, tasks, setTasks, simResult, setSimResult, isSimulating, setIsSimulating
+}: any) {
     const handleDecompose = async () => {
         try {
             setIsSimulating(true);
-            const goal = initialGoals[Math.floor(Math.random() * initialGoals.length)];
+            const goal = goals[Math.floor(Math.random() * goals.length)];
             const res = await fetch('/api/engine/decompose', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     goal,
-                    employees: initialEmployees,
-                    marketContext: signals.map(s => s.description).join(', ')
+                    employees: employees,
+                    marketContext: signals.map((s: any) => s.description).join(', ') || 'Standard competitive market'
                 }),
             });
             const data = await res.json();
             if (data.tasks) {
-                setTasks(prev => [...prev, ...data.tasks]);
-                // Trigger a re-simulation after new tasks are added
+                setTasks((prev: any) => [...prev, ...data.tasks]);
                 const simRes = await fetch('/api/engine/simulate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -73,7 +319,7 @@ export default function BCEDashboard() {
                 });
                 const simData = await simRes.json();
                 if (simData.macroScore) {
-                    setSimResult(prev => ({
+                    setSimResult((prev: any) => ({
                         ...engine.runSimulation(signals),
                         alignmentScore: simData.macroScore,
                     }));
@@ -95,8 +341,6 @@ export default function BCEDashboard() {
                 body: JSON.stringify({ tasks, signals }),
             });
             const simData = await simRes.json();
-
-            // Merge AI impact predictions with local engine metrics
             const localMetrics = engine.runSimulation(signals);
             setSimResult({
                 ...localMetrics,
@@ -131,8 +375,7 @@ export default function BCEDashboard() {
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* Left Column: Strategy & Workforce */}
+                {/* Left Column */}
                 <div className="lg:col-span-1 space-y-8 flex direction-column gap-6">
                     <section className="glass-card">
                         <h2 className="flex items-center gap-3 mb-6 text-xl">
@@ -140,7 +383,7 @@ export default function BCEDashboard() {
                             Strategic Goals (OKRs)
                         </h2>
                         <div className="flex direction-column gap-4">
-                            {initialGoals.map(goal => (
+                            {goals.map((goal: any) => (
                                 <div key={goal.id} className="p-4 bg-black/30 rounded-xl border border-white/5 flex direction-column">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="font-semibold">{goal.title}</span>
@@ -164,7 +407,7 @@ export default function BCEDashboard() {
                             Workforce Graph
                         </h2>
                         <div className="flex direction-column gap-4">
-                            {initialEmployees.map(emp => (
+                            {employees.map((emp: any) => (
                                 <div key={emp.id} className="flex items-center gap-4 p-3 bg-white/5 rounded-xl border border-white/5">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center font-bold">
                                         {emp.name[0]}
@@ -179,10 +422,8 @@ export default function BCEDashboard() {
                     </section>
                 </div>
 
-                {/* Center Column: Execution Engine */}
+                {/* Center Column */}
                 <div className="lg:col-span-2 space-y-8">
-
-                    {/* Top Metrics */}
                     <section className="grid grid-cols-3 gap-4">
                         <div className="glass-card text-center py-8">
                             <div className="stat-label">Alignment Score</div>
@@ -198,7 +439,6 @@ export default function BCEDashboard() {
                         </div>
                     </section>
 
-                    {/* Execution Feed */}
                     <section className="glass-card relative overflow-hidden">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="flex items-center gap-3 text-xl">
@@ -212,7 +452,7 @@ export default function BCEDashboard() {
 
                         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                             <AnimatePresence mode="popLayout">
-                                {tasks.slice().reverse().map((task, idx) => (
+                                {tasks.slice().reverse().map((task: any) => (
                                     <motion.div
                                         key={task.id}
                                         initial={{ opacity: 0, x: -20 }}
@@ -230,7 +470,7 @@ export default function BCEDashboard() {
                                             <div className="flex justify-between items-start">
                                                 <h3 className="font-bold text-lg">{task.title}</h3>
                                                 <span className="text-[10px] text-dim bg-white/10 px-2 py-1 rounded">
-                                                    {initialEmployees.find(e => e.id === task.ownerId)?.name}
+                                                    {employees.find((e: any) => e.id === task.ownerId)?.name}
                                                 </span>
                                             </div>
                                             <p className="text-dim text-sm mt-1">{task.description}</p>
@@ -259,7 +499,7 @@ export default function BCEDashboard() {
                                 Bottlenecks Detected
                             </h3>
                             <ul className="space-y-2 text-sm text-dim">
-                                {simResult?.bottlenecks.map((b, i) => (
+                                {simResult?.bottlenecks.map((b: any, i: number) => (
                                     <li key={i} className="flex items-center gap-2">
                                         <div className="w-1 h-1 bg-orange-400 rounded-full" />
                                         {b}
@@ -274,7 +514,7 @@ export default function BCEDashboard() {
                                 AI Recommendations
                             </h3>
                             <ul className="space-y-2 text-sm text-dim">
-                                {simResult?.recommendations.map((r, i) => (
+                                {simResult?.recommendations.map((r: any, i: number) => (
                                     <li key={i} className="flex items-center gap-2">
                                         <div className="w-1 h-1 bg-cyan-400 rounded-full" />
                                         {r}
@@ -285,19 +525,6 @@ export default function BCEDashboard() {
                     </div>
                 </div>
             </div>
-
-            <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 10px;
-        }
-      `}</style>
         </div>
     );
 }
